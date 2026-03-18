@@ -1,38 +1,88 @@
-# AymenOu SQL Studio + YouTube Analytics Agent
+# AymenOu SQL Studio — YouTube Analytics Agent
 
-> Ask your database anything in plain English. The AI writes the SQL, runs it, and gives you insights.
+> Ask your database anything in plain English. The AI writes the SQL, runs it, and gives you insights — 100% offline.
 
-![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat-square&logo=python)
-![Flask](https://img.shields.io/badge/Flask-Web%20UI-lightgrey?style=flat-square&logo=flask)
-![Ollama](https://img.shields.io/badge/Ollama-Offline%20AI-black?style=flat-square)
-![SQL Server](https://img.shields.io/badge/SQL%20Server-1M%20Rows-red?style=flat-square&logo=microsoft-sql-server)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-Web%20UI-000000?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com)
+[![Ollama](https://img.shields.io/badge/Ollama-Offline%20AI-FF6C37?style=for-the-badge)](https://ollama.ai)
+[![SQL Server](https://img.shields.io/badge/SQL%20Server-1M%20Rows-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)](https://www.microsoft.com/sql-server)
+[![License](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)](LICENSE)
 
 ---
 
 ## What Is This?
 
-A fully **offline** AI-powered tool that converts natural language into SQL queries and runs them against your real database.
+A fully **offline** AI-powered tool that converts natural language questions into SQL queries and runs them directly against your database.
 
-No cloud. No subscriptions. Everything runs on your local machine.
+**No cloud. No subscriptions. No data leaves your machine.**
 
 ```
-You type:   "Which category has the highest average views?"
-Agent:      SELECT c.category_name, AVG(m.views) AS avg_views
-            FROM dbo.video_metrics m
-            JOIN dbo.videos v ON m.video_id = v.video_id
-            JOIN dbo.categories c ON v.category_id = c.category_id
-            GROUP BY c.category_name
-            ORDER BY avg_views DESC
+You ask  →  "Which category has the highest average views?"
 
-Result:     Table with data + business insight + follow-up suggestions
+AI writes →  SELECT c.category_name, AVG(m.views) AS avg_views
+             FROM dbo.video_metrics m
+             JOIN dbo.videos v   ON m.video_id = v.video_id
+             JOIN dbo.categories c ON v.category_id = c.category_id
+             GROUP BY c.category_name
+             ORDER BY avg_views DESC
+
+You get  →  Result table + business insight + suggested follow-up questions
+```
+
+---
+
+## How It Works
+
+```mermaid
+flowchart LR
+    A["🗣️ Your Question\n(plain English)"] --> B["🤖 LLM\nOllama / OpenAI\n/ Anthropic"]
+    B --> C["📝 SQL Query\nGenerated"]
+    C --> D{{"🛡️ Safety Check\nread-only validation"}}
+    D -->|"❌ Blocked"| E["Error Message"]
+    D -->|"✅ Approved"| F["🗄️ Database\nExecution"]
+    F --> G["📊 Results\n+ AI Insight"]
+    G --> H["💬 Follow-up\nSuggestions"]
+```
+
+---
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph UI["🖥️ Entry Points"]
+        W["web_app_v2.py\n:5000 — SQLite / PostgreSQL"]
+        AG["agent.py\n:5001 — YouTube Analytics\nSQL Server 1M rows"]
+        CLI["app.py\nCLI Interactive Mode"]
+    end
+
+    subgraph CORE["⚙️ Core Engine  (app.py)"]
+        LLM["LLM Router\nollama · openai · anthropic"]
+        VAL["SQL Validator\nread-only enforcement\nno DROP / DELETE / ALTER"]
+        LIM["Row Limiter\nmax 500 rows per query"]
+    end
+
+    subgraph DB["🗄️ Databases"]
+        SQLITE[("SQLite\nsample.db\nEmployees · Sales · Products")]
+        SQLSRV[("SQL Server\nYouTubeAnalytics\n1 000 000 rows")]
+        PG[("PostgreSQL\nCustom DB\nvia connection string")]
+    end
+
+    W   --> LLM
+    AG  --> LLM
+    CLI --> LLM
+    LLM --> VAL
+    VAL --> LIM
+    LIM --> SQLITE
+    LIM --> SQLSRV
+    LIM --> PG
 ```
 
 ---
 
 ## Screenshots
 
-### Natural Language → SQL Query (Agent Demo)
+### Natural Language → SQL Query
 ![Natural Language to SQL Query Agent Demo](screenshots/15.jpeg)
 
 ### Database Statistics — 1M rows processed
@@ -40,45 +90,40 @@ Result:     Table with data + business insight + follow-up suggestions
 
 ---
 
-## Demo
+## Features
 
-| Feature | Description |
-|---|---|
-| Natural language to SQL | Type any question, get SQL instantly |
-| Agent Insights | AI explains what the results mean |
-| Follow-up questions | Suggested next questions after each answer |
-| Export to CSV | Download any result with one click |
-| Schema viewer | See your full database structure in the sidebar |
-| 100% offline | Powered by Ollama — no internet needed |
-
----
-
-## Presentation Ready
-
-If you need to present this project quickly:
-
-1. Use the live demo script: [DEMO_SCRIPT.md](DEMO_SCRIPT.md)
-2. Follow French install steps: [INSTALL_FR.md](INSTALL_FR.md)
-3. Start from the web UI (`python web_app_v2.py`) and show:
-    - Natural language question
-    - Generated SQL
-    - Result table
-    - `CSV` export and `SQL+Result` export
+| Feature | web_app_v2.py | agent.py | app.py (CLI) |
+|---|:---:|:---:|:---:|
+| Natural language to SQL | ✅ | ✅ | ✅ |
+| AI-generated insights | ✅ | ✅ | ✅ |
+| Follow-up suggestions | ✅ | ✅ | ❌ |
+| Schema viewer (sidebar) | ✅ | ✅ | ❌ |
+| Export CSV | ✅ | ✅ | ❌ |
+| Export SQL + Result report | ✅ | ❌ | ❌ |
+| SQLite support | ✅ | ❌ | ✅ |
+| SQL Server support | ❌ | ✅ | ❌ |
+| PostgreSQL support | ✅ | ❌ | ❌ |
+| 100% offline (Ollama) | ✅ | ✅ | ✅ |
 
 ---
 
 ## Project Structure
 
 ```
-text-to-sql/
-├── app.py              # Core engine: LLM backends, SQL runner, schema reader
-├── agent.py            # YouTube Analytics Agent (SQL Server, 1M rows)
-├── web_app_v2.py       # General web UI (SQLite + PostgreSQL)
-├── env.example.txt     # Environment variables template
-├── requirements.txt    # Python dependencies
-├── .gitignore
+sql-ai-agent/
+│
+├── app.py              ← Core engine: LLM backends, SQL runner, security layer
+├── agent.py            ← YouTube Analytics Agent (SQL Server, 1M rows)  :5001
+├── web_app_v2.py       ← General web UI (SQLite + PostgreSQL)            :5000
+│
+├── env.example.txt     ← Environment variables template (copy → .env)
+├── requirements.txt    ← Python dependencies
+│
+├── DEMO_SCRIPT.md      ← 5-minute live demo guide
+├── INSTALL_FR.md       ← French installation guide
+│
 └── data/
-    └── sample.db       # Auto-generated SQLite sample database
+    └── sample.db       ← Auto-generated SQLite database (created on first run)
 ```
 
 ---
@@ -87,12 +132,15 @@ text-to-sql/
 
 | Layer | Technology |
 |---|---|
-| Language | Python 3.x |
-| AI Model | Ollama — llama3.2 (fully offline, runs on CPU) |
+| Language | Python 3.8+ |
+| AI (offline) | Ollama — llama3.2 (runs on CPU, no GPU needed) |
+| AI (optional cloud) | OpenAI GPT-4o-mini · Anthropic Claude Haiku |
 | Web Framework | Flask |
-| Local Database | SQLite (sample data — employees, sales, products) |
+| Local Database | SQLite — employees, sales, products (auto-created) |
 | Production Database | SQL Server via pyodbc |
+| Optional Database | PostgreSQL via psycopg2 |
 | Frontend | HTML + CSS + Vanilla JavaScript |
+| Security | Read-only SQL validation, row limiter, keyword blocklist |
 
 ---
 
@@ -101,8 +149,8 @@ text-to-sql/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/text-to-sql.git
-cd text-to-sql
+git clone https://github.com/AymenOuhiba/sql-ai-agent.git
+cd sql-ai-agent
 ```
 
 ### 2. Create virtual environment
@@ -113,7 +161,7 @@ python -m venv venv
 # Windows
 venv\Scripts\activate
 
-# Mac/Linux
+# Mac / Linux
 source venv/bin/activate
 ```
 
@@ -123,15 +171,15 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Install Ollama (local AI)
+### 4. Install Ollama — the offline AI engine
 
-Download from [ollama.ai](https://ollama.ai) then pull the model:
+Download from [ollama.ai](https://ollama.ai), then pull the model:
 
 ```bash
 ollama pull llama3.2
 ```
 
-> This downloads ~2GB. After this, everything runs fully offline.
+> Downloads ~2 GB once. After that, everything runs fully offline with no internet.
 
 ### 5. Configure environment
 
@@ -139,11 +187,11 @@ ollama pull llama3.2
 # Windows
 copy env.example.txt .env
 
-# Mac/Linux
+# Mac / Linux
 cp env.example.txt .env
 ```
 
-Edit `.env` and set your SQL Server name:
+Then edit `.env`:
 
 ```env
 AYMENOU_SQL_SERVER=YOUR_SERVER_NAME\SQLEXPRESS
@@ -153,15 +201,15 @@ AYMENOU_SQL_DATABASE=YouTubeAnalytics
 ### 6. Run
 
 ```bash
-# YouTube Analytics Agent (SQL Server)
+# Option A — YouTube Analytics Agent (SQL Server)
 python agent.py
-# Open: http://localhost:5001
+# → http://localhost:5001
 
-# General web app (SQLite / PostgreSQL)
+# Option B — General web UI (SQLite / PostgreSQL)
 python web_app_v2.py
-# Open: http://localhost:5000
+# → http://localhost:5000
 
-# Command line interface
+# Option C — Command line
 python app.py
 ```
 
@@ -169,52 +217,83 @@ python app.py
 
 ## YouTube Analytics Database
 
-Dataset from Kaggle: [YouTube 1M Global Creator Analytics](https://www.kaggle.com/datasets/ehsanzx/youtube-1m-global-creator-analytics)
+Dataset: [YouTube 1M Global Creator Analytics — Kaggle](https://www.kaggle.com/datasets/ehsanzx/youtube-1m-global-creator-analytics)
 
-### Schema
-
-```
-categories      category_id (PK), category_name
-languages       language_id (PK), language_name
-regions         region_id (PK), region_name
-videos          video_id (PK), category_id (FK), language_id (FK),
-                region_id (FK), duration_sec, ads_enabled
-video_metrics   metric_id (PK), video_id (FK), timestamp, views,
-                likes, comments, shares, sentiment_score
-youtube_raw     Raw source data — 1,000,000 rows
-```
-
-### Example Questions
+### Database Schema
 
 ```
-How many videos are there in each category?
-What is the average number of views for each language?
-How many videos have ads enabled?
-What is the total number of videos in each region?
-Top 10 most viewed videos
-Which category has the highest average views?
-What percentage of videos have comments disabled?
-Average likes and dislikes per category
-Which language has the most videos?
-Show videos with over 1 million views by region
+┌─────────────┐       ┌────────────────┐       ┌───────────────┐
+│  categories │       │     videos     │       │  video_metrics│
+│─────────────│       │────────────────│       │───────────────│
+│ category_id │◄──PK──│ video_id    PK │──PK──►│ metric_id  PK │
+│ category_name│      │ category_id FK │       │ video_id   FK │
+└─────────────┘       │ language_id FK │       │ timestamp     │
+                      │ region_id   FK │       │ views         │
+┌─────────────┐       │ duration_sec   │       │ likes         │
+│  languages  │       │ ads_enabled    │       │ comments      │
+│─────────────│       └────────────────┘       │ shares        │
+│ language_id │◄──PK──────────────┘            │ sentiment_score│
+│ language_name│                               └───────────────┘
+└─────────────┘
+                                        ┌──────────────────────┐
+┌─────────────┐                         │     youtube_raw      │
+│   regions   │                         │──────────────────────│
+│─────────────│                         │ Raw CSV import table │
+│ region_id   │◄──PK──────────────┘     │ 1 000 000 rows       │
+│ region_name │                         └──────────────────────┘
+└─────────────┘
+```
+
+### Example Questions to Try
+
+```sql
+-- Engagement
+"Which category has the highest average views?"
+"Top 10 most viewed videos"
+"Average likes and comments per category"
+
+-- Distribution
+"How many videos are there in each category?"
+"What is the total number of videos in each region?"
+"Which language has the most videos?"
+
+-- Filters
+"How many videos have ads enabled?"
+"Show videos with over 1 million views by region"
+"What percentage of videos have comments disabled?"
 ```
 
 ---
 
-## How the Agent Works
+## Security Layer
+
+Every query passes through a 3-step safety chain before touching the database:
 
 ```
-1. You type a question
-         ↓
-2. Agent reads full schema + row counts
-         ↓
-3. Ollama AI selects the right tables and JOINs
-         ↓
-4. SQL generated for SQL Server syntax
-         ↓
-5. Query runs on real database (1M rows)
-         ↓
-6. Results + insight + follow-up questions
+User input
+    │
+    ▼
+┌──────────────────────────────────────┐
+│  1. validate_read_only_sql()         │  Blocks INSERT · UPDATE · DELETE
+│                                      │         DROP · ALTER · TRUNCATE · EXEC
+│                                      │  Blocks stacked statements (;)
+└───────────────────┬──────────────────┘
+                    │ ✅ passes
+                    ▼
+┌──────────────────────────────────────┐
+│  2. BLOCKED_SQL_PATTERN (regex)      │  Secondary keyword blocklist
+│                                      │  catches obfuscated patterns
+└───────────────────┬──────────────────┘
+                    │ ✅ passes
+                    ▼
+┌──────────────────────────────────────┐
+│  3. ensure_row_limit()               │  Adds LIMIT N   (SQLite / PostgreSQL)
+│                                      │  Adds TOP N     (SQL Server)
+│                                      │  Max rows: AYMENOU_MAX_QUERY_ROWS
+└───────────────────┬──────────────────┘
+                    │
+                    ▼
+              Database query
 ```
 
 ---
@@ -222,53 +301,33 @@ Show videos with over 1 million views by region
 ## Switching AI Models
 
 ```bash
-# Pull a different model
 ollama pull llama3.3
 ollama pull mistral
 ollama pull deepseek-coder
 ```
 
-Then set in `.env`:
-
 ```env
+# In .env
 AYMENOU_OLLAMA_MODEL=llama3.3
 ```
 
-| Model | Size | Best For |
-|---|---|---|
-| llama3.2 (default) | ~2GB | Balanced speed and accuracy |
-| llama3.3 | ~4GB | Better SQL generation |
-| mistral | ~4GB | Fastest responses |
-| deepseek-coder | ~4GB | Specialized for SQL and code |
+| Model | Size | Speed | Best For |
+|---|---|---|---|
+| `llama3.2` *(default)* | ~2 GB | Fast | Balanced — good start |
+| `llama3.3` | ~4 GB | Medium | Better SQL accuracy |
+| `mistral` | ~4 GB | Fastest | Quick answers |
+| `deepseek-coder` | ~4 GB | Medium | SQL & code specialization |
 
-To use cloud AI instead:
+**Switch to cloud AI** (requires API key):
 
 ```env
 AYMENOU_LLM_BACKEND=openai
 AYMENOU_OPENAI_API_KEY=sk-...
+
+# or
+AYMENOU_LLM_BACKEND=anthropic
+AYMENOU_ANTHROPIC_API_KEY=sk-ant-...
 ```
-
----
-
-## Requirements
-
-- Python 3.8+
-- Ollama installed ([ollama.ai](https://ollama.ai))
-- ODBC Driver 17 for SQL Server ([download](https://aka.ms/odbc17))
-- SQL Server running locally (Express edition works fine)
-
----
-
-## Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| `ollama not found` | Add Ollama to PATH or restart terminal |
-| `pyodbc error` | `pip install pyodbc` |
-| `ODBC Driver missing` | Download from aka.ms/odbc17 |
-| SQL Server not connecting | Check `AYMENOU_SQL_SERVER` in `.env` matches your SSMS connection |
-| Slow responses | Normal — Ollama runs on CPU, 30–90 seconds per query |
-| Port already in use | Change `port=5001` in `agent.py` to another number |
 
 ---
 
@@ -276,16 +335,55 @@ AYMENOU_OPENAI_API_KEY=sk-...
 
 | Variable | Default | Description |
 |---|---|---|
-| `AYMENOU_LLM_BACKEND` | `ollama` | AI backend: `ollama`, `openai`, `anthropic` |
+| `AYMENOU_LLM_BACKEND` | `ollama` | AI backend: `ollama` · `openai` · `anthropic` |
 | `AYMENOU_OLLAMA_MODEL` | `llama3.2` | Ollama model name |
-| `AYMENOU_OLLAMA_URL` | `http://localhost:11434/api/generate` | Ollama API URL |
+| `AYMENOU_OLLAMA_URL` | `http://localhost:11434/api/generate` | Ollama API endpoint |
 | `AYMENOU_SQL_SERVER` | `localhost\SQLEXPRESS` | SQL Server instance name |
-| `AYMENOU_SQL_DATABASE` | `YouTubeAnalytics` | Database name |
-| `AYMENOU_DB_PATH` | `data/sample.db` | SQLite path (for web_app_v2) |
-| `AYMENOU_MAX_QUERY_ROWS` | `500` | Defensive max rows returned per query |
-| `AYMENOU_FLASK_DEBUG` | `0` | Set `1` only for local debugging |
-| `AYMENOU_OPENAI_API_KEY` | — | Required only if `AYMENOU_LLM_BACKEND=openai` |
-| `AYMENOU_ANTHROPIC_API_KEY` | — | Required only if `AYMENOU_LLM_BACKEND=anthropic` |
+| `AYMENOU_SQL_DATABASE` | `YouTubeAnalytics` | SQL Server database name |
+| `AYMENOU_DB_PATH` | `data/sample.db` | SQLite file path (web_app_v2) |
+| `AYMENOU_MAX_QUERY_ROWS` | `500` | Max rows returned per query |
+| `AYMENOU_FLASK_DEBUG` | `0` | Set `1` for local dev only |
+| `AYMENOU_OPENAI_API_KEY` | *(none)* | Required when backend = `openai` |
+| `AYMENOU_ANTHROPIC_API_KEY` | *(none)* | Required when backend = `anthropic` |
+
+---
+
+## Requirements
+
+- Python 3.8+
+- [Ollama](https://ollama.ai) installed and running
+- [ODBC Driver 17 for SQL Server](https://aka.ms/odbc17) *(agent.py only)*
+- SQL Server Express *(agent.py only)*
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `ollama not found` | Add Ollama to PATH or restart your terminal |
+| `pyodbc error` | `pip install pyodbc` |
+| `ODBC Driver missing` | Download from [aka.ms/odbc17](https://aka.ms/odbc17) |
+| SQL Server not connecting | Verify `AYMENOU_SQL_SERVER` in `.env` matches SSMS |
+| Slow first response | Normal — Ollama runs on CPU, expect 30–90 s |
+| Port already in use | Change `port=5001` in `agent.py` to a free port |
+| Model not found | Run `ollama pull llama3.2` first |
+
+---
+
+## Presentation Ready
+
+| Resource | Description |
+|---|---|
+| [DEMO_SCRIPT.md](DEMO_SCRIPT.md) | 5-minute live demo walkthrough |
+| [INSTALL_FR.md](INSTALL_FR.md) | Guide d'installation en français |
+
+**Suggested demo flow:**
+1. Start `python agent.py` (`http://localhost:5001`)
+2. Ask: *"Which category has the highest average views?"*
+3. Show the generated SQL, result table, AI insight
+4. Click **Export SQL + Result** → download the report
+5. Show the safety layer: type `DROP TABLE videos` → watch it get blocked
 
 ---
 
@@ -295,4 +393,4 @@ MIT License — free to use, modify, and share.
 
 ---
 
-*Built by AymenOu with Python + Ollama + Flask + SQL Server*
+*Built by AymenOu · Python · Ollama · Flask · SQL Server*
